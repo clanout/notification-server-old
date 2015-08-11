@@ -102,6 +102,8 @@ public class NotificationService
                             GcmResponse.Result result = results.get(i);
                             String userId = userIds.get(i);
 
+                            log.info("Multicast Error : " + userId + " -> " + GsonProvider.get().toJson(result));
+
                             if (result.getRegistrationId() != null)
                             {
                                 register(userId, result.getRegistrationId());
