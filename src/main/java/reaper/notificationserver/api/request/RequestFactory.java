@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.apache.log4j.Logger;
 import reaper.notificationserver.api.exceptions.HttpExceptions;
+import reaper.notificationserver.service.GsonProvider;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -12,8 +13,6 @@ public class RequestFactory
 {
     private static Logger log = Logger.getLogger(RequestFactory.class);
 
-    private static Gson gson = new Gson();
-
     public static Request create(String json) throws HttpExceptions.ServerError
     {
         try
@@ -21,7 +20,7 @@ public class RequestFactory
             Type type = new TypeToken<Map<String, String>>()
             {
             }.getType();
-            Map<String, String> data = gson.fromJson(json, type);
+            Map<String, String> data = GsonProvider.get().fromJson(json, type);
             return new Request(data);
         }
         catch (Exception e)

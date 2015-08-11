@@ -4,7 +4,8 @@ import java.net.URL;
 
 public enum ConfResource
 {
-    DB("db.conf");
+    DB("db.conf"),
+    GCM("gcm.conf");
 
     private String FILE;
 

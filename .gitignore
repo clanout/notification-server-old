@@ -22,3 +22,6 @@ target/
 
 ## App Manager
 /.manager/
+
+## OS X metadata
+*.DS_Store*
