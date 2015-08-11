@@ -12,7 +12,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class NotificationService
 {
@@ -156,6 +158,50 @@ public class NotificationService
         else
         {
             log.error("Failed to broadcast message [" + response.getError() + "]");
+            throw new HttpExceptions.ServerError();
+        }
+    }
+
+    public List<String> pullFailedNotifications(String userId)throws HttpExceptions.ServerError
+    {
+        List<String> result = new ArrayList<>();
+
+        String SQL_READ = "SELECT notification_data from notification_failures WHERE user_id = ? ORDER BY time_created DESC";
+
+        Connection connection = null;
+        try
+        {
+            connection = DataSource.getConnection();
+
+            PreparedStatement preparedStatement = connection.prepareStatement(SQL_READ);
+            preparedStatement.setString(1, userId);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next())
+            {
+                result.add(resultSet.getString(1));
+            }
+
+            resultSet.close();
+            preparedStatement.close();
+            connection.close();
+
+            return result;
+        }
+        catch (SQLException e)
+        {
+            if (connection != null)
+            {
+                try
+                {
+                    connection.close();
+                }
+                catch (SQLException e1)
+                {
+                    log.error("Unable to close db connection [" + e1.getMessage() + "]");
+                }
+            }
+            log.error("Unable to pull pending notifications for user (" + userId + ")", e);
             throw new HttpExceptions.ServerError();
         }
     }

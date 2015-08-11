@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 import reaper.notificationserver.api.exceptions.HttpExceptions;
 import reaper.notificationserver.api.request.Request;
 import reaper.notificationserver.api.request.RequestFactory;
+import reaper.notificationserver.service.GsonProvider;
 import reaper.notificationserver.service.NotificationService;
 
 import javax.ws.rs.Consumes;
@@ -15,7 +16,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @Path("/")
@@ -127,6 +130,40 @@ public class NotificationServer
             service.send(channelId, data);
 
             return Response.ok().build();
+        }
+        catch (HttpExceptions.BadRequest e)
+        {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+        catch (HttpExceptions.ServerError e)
+        {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Path("pull")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response pull(String postDatJson)
+    {
+        try
+        {
+            Request request = RequestFactory.create(postDatJson);
+
+            String userId = request.get("user_id");
+
+            if(userId == null || userId.isEmpty())
+            {
+                log.error("user_id cannot be null/empty");
+                throw new HttpExceptions.BadRequest();
+            }
+
+            NotificationService service = new NotificationService();
+            Map<String, List<String>> result = new HashMap<>();
+            result.put("notifications", service.pullFailedNotifications(userId));
+
+            return Response.ok(GsonProvider.get().toJson(result), MediaType.APPLICATION_JSON_TYPE).build();
         }
         catch (HttpExceptions.BadRequest e)
         {

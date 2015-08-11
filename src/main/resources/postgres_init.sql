@@ -7,7 +7,7 @@ CREATE TABLE users
 
 CREATE TABLE notification_failures
 (
-  user_id VARCHAR NOT NULL REFERENCES users(user_id),
+  user_id VARCHAR NOT NULL REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE CASCADE ,
   notification_data VARCHAR NOT NULL,
   time_created TIMESTAMP WITH TIME ZONE NOT NULL
 );
