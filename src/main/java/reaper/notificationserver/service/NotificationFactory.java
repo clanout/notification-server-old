@@ -17,10 +17,7 @@ public class NotificationFactory
     {
         try
         {
-            Type type = new TypeToken<Map<String, String>>()
-            {
-            }.getType();
-            return new Notification(null, registrationIds, GsonProvider.get().fromJson(jsonData, type));
+            return new Notification(null, registrationIds, GsonProvider.get().fromJson(jsonData, Notification.Data.class));
         }
         catch (Exception e)
         {
@@ -33,10 +30,7 @@ public class NotificationFactory
     {
         try
         {
-            Type type = new TypeToken<Map<String, String>>()
-            {
-            }.getType();
-            return new Notification(channelId, null, GsonProvider.get().fromJson(jsonData, type));
+            return new Notification(channelId, null, GsonProvider.get().fromJson(jsonData, Notification.Data.class));
         }
         catch (Exception e)
         {

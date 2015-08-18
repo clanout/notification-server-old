@@ -14,12 +14,24 @@ public class Notification
     private List<String> registrationIds;
 
     @SerializedName("data")
-    private Map<String, String> data;
+    private Data data;
 
-    public Notification(String to, List<String> registrationIds, Map<String, String> data)
+    public Notification(String to, List<String> registrationIds, Data data)
     {
         this.to = to;
         this.registrationIds = registrationIds;
         this.data = data;
+    }
+
+    public static class Data
+    {
+        @SerializedName("type")
+        private String type;
+
+        @SerializedName("message")
+        private String message;
+
+        @SerializedName("parameters")
+        private Map<String, String> parameters;
     }
 }
