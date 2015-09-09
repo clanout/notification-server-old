@@ -1,12 +1,13 @@
 package reaper.notificationserver.api;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import org.apache.log4j.Logger;
 import reaper.notificationserver.api.exceptions.HttpExceptions;
-import reaper.notificationserver.api.request.Request;
-import reaper.notificationserver.api.request.RequestFactory;
+import reaper.notificationserver.api.request.BroadcastNotificationRequest;
+import reaper.notificationserver.api.request.MulticastNotificationRequest;
+import reaper.notificationserver.api.request.NotificationPullRequest;
+import reaper.notificationserver.api.request.NotificationRegistrationRequest;
 import reaper.notificationserver.service.GsonProvider;
+import reaper.notificationserver.service.Notification;
 import reaper.notificationserver.service.NotificationService;
 
 import javax.ws.rs.Consumes;
@@ -15,7 +16,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,10 +34,10 @@ public class NotificationServer
     {
         try
         {
-            Request request = RequestFactory.create(postDataJson);
+            NotificationRegistrationRequest request = GsonProvider.get().fromJson(postDataJson, NotificationRegistrationRequest.class);
 
-            String userId = request.get("user_id");
-            String token = request.get("token");
+            String userId = request.getUserId();
+            String token = request.getToken();
 
             if (userId == null || token == null)
             {
@@ -67,26 +67,12 @@ public class NotificationServer
     {
         try
         {
-            Request request = RequestFactory.create(postDatJson);
+            MulticastNotificationRequest request = GsonProvider.get().fromJson(postDatJson, MulticastNotificationRequest.class);
 
-            List<String> userIds;
-            try
-            {
-                String recipientJson = request.get("to");
-                Type type = new TypeToken<List<String>>()
-                {
-                }.getType();
-                userIds = new Gson().fromJson(recipientJson, type);
-            }
-            catch (Exception e)
-            {
-                log.error("Unable to process recipient user id list");
-                throw new HttpExceptions.BadRequest();
-            }
+            List<String> userIds = request.getUserIds();
+            Notification.Data data = request.getNotification();
 
-            String data = request.get("data");
-
-            if(userIds == null || userIds.isEmpty() || data == null || data.isEmpty())
+            if (userIds == null || userIds.isEmpty() || data == null)
             {
                 log.error("user_ids/data cannot be null/empty");
                 throw new HttpExceptions.BadRequest();
@@ -115,12 +101,12 @@ public class NotificationServer
     {
         try
         {
-            Request request = RequestFactory.create(postDatJson);
+            BroadcastNotificationRequest request = GsonProvider.get().fromJson(postDatJson, BroadcastNotificationRequest.class);
 
-            String channelId = request.get("to");
-            String data = request.get("data");
+            String channelId = request.getChannelId();
+            Notification.Data data = request.getNotification();
 
-            if(channelId == null || channelId.isEmpty() || data == null || data.isEmpty())
+            if (channelId == null || channelId.isEmpty() || data == null)
             {
                 log.error("channel_id/data cannot be null/empty");
                 throw new HttpExceptions.BadRequest();
@@ -149,11 +135,11 @@ public class NotificationServer
     {
         try
         {
-            Request request = RequestFactory.create(postDatJson);
+            NotificationPullRequest request = GsonProvider.get().fromJson(postDatJson, NotificationPullRequest.class);
 
-            String userId = request.get("user_id");
+            String userId = request.getUserId();
 
-            if(userId == null || userId.isEmpty())
+            if (userId == null || userId.isEmpty())
             {
                 log.error("user_id cannot be null/empty");
                 throw new HttpExceptions.BadRequest();

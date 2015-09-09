@@ -7,14 +7,10 @@ import reaper.notificationserver.service.gcm.GcmApi;
 import reaper.notificationserver.service.gcm.GcmHelper;
 import reaper.notificationserver.service.gcm.GcmResponse;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.*;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.*;
 
 public class NotificationService
 {
@@ -23,7 +19,7 @@ public class NotificationService
     public void register(String userId, String token) throws HttpExceptions.ServerError
     {
         String SQL_DELETE = "DELETE FROM users where user_id = ?";
-        String SQL_INSERT = "INSERT INTO users VALUES (?, ?, CURRENT_TIMESTAMP)";
+        String SQL_INSERT = "INSERT INTO users VALUES (?, ?, ?)";
 
         Connection connection = null;
         try
@@ -39,6 +35,7 @@ public class NotificationService
             preparedStatement = connection.prepareStatement(SQL_INSERT);
             preparedStatement.setString(1, userId);
             preparedStatement.setString(2, token);
+            preparedStatement.setTimestamp(3, Timestamp.from(OffsetDateTime.now(ZoneOffset.UTC).toInstant()));
             preparedStatement.executeUpdate();
             preparedStatement.close();
 
@@ -65,7 +62,7 @@ public class NotificationService
         }
     }
 
-    public void send(List<String> userIds, String jsonData) throws HttpExceptions.ServerError
+    public void send(List<String> userIds, Notification.Data data) throws HttpExceptions.ServerError
     {
         List<String> tokens = new ArrayList<>();
 
@@ -88,15 +85,16 @@ public class NotificationService
 
             if (!tokens.isEmpty())
             {
-                Notification notification = NotificationFactory.multicastNotification(tokens, jsonData);
+                Notification notification = NotificationFactory.multicastNotification(tokens, data);
                 GcmApi gcmApi = GcmHelper.getApi();
                 GcmResponse response = gcmApi.send(notification);
 
                 if (response != null)
                 {
+                    log.info(response.getMusticastId() + " : Failure Count = " + response.getFailureCount() + "; Reg. ID update count = " + response.getCanonicalIdCount());
+
                     if (response.getFailureCount() != 0 || response.getCanonicalIdCount() != 0)
                     {
-                        log.info(response.getMusticastId() + " : Failure Count = " + response.getFailureCount() + "; Reg. ID update count = " + response.getCanonicalIdCount());
                         List<GcmResponse.Result> results = response.getResults();
                         int size = results.size();
                         for (int i = 0; i < size; i++)
@@ -113,7 +111,7 @@ public class NotificationService
 
                             if (result.getError() != null)
                             {
-                                saveFailedNotification(result.getMessageId(), userId, jsonData);
+                                saveFailedNotification(result.getMessageId(), userId, GsonProvider.get().toJson(data));
                             }
                         }
                     }
@@ -143,11 +141,11 @@ public class NotificationService
         }
     }
 
-    public void send(String channelId, String jsonData) throws HttpExceptions.ServerError
+    public void send(String channelId, Notification.Data data) throws HttpExceptions.ServerError
     {
         channelId = "/topics/" + channelId;
 
-        Notification notification = NotificationFactory.broadcastNotification(channelId, jsonData);
+        Notification notification = NotificationFactory.broadcastNotification(channelId, data);
         GcmApi gcmApi = GcmHelper.getApi();
         GcmResponse response = gcmApi.send(notification);
 
@@ -208,7 +206,7 @@ public class NotificationService
 
     private void saveFailedNotification(String notificationId, String userId, String notificationJsonData)
     {
-        String SQL_INSERT = "INSERT INTO notification_failures VALUES (?, ?, CURRENT_TIMESTAMP)";
+        String SQL_INSERT = "INSERT INTO notification_failures VALUES (?, ?, ?)";
 
         Connection connection = null;
         try
@@ -217,6 +215,7 @@ public class NotificationService
             PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT);
             preparedStatement.setString(1, userId);
             preparedStatement.setString(2, notificationJsonData);
+            preparedStatement.setTimestamp(3, Timestamp.from(OffsetDateTime.now(ZoneOffset.UTC).toInstant()));
             preparedStatement.executeUpdate();
             preparedStatement.close();
             connection.close();

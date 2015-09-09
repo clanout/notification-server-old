@@ -13,11 +13,11 @@ public class NotificationFactory
 {
     private static Logger log = Logger.getLogger(NotificationFactory.class);
 
-    public static Notification multicastNotification(List<String> registrationIds, String jsonData) throws HttpExceptions.ServerError
+    public static Notification multicastNotification(List<String> registrationIds, Notification.Data data) throws HttpExceptions.ServerError
     {
         try
         {
-            return new Notification(null, registrationIds, GsonProvider.get().fromJson(jsonData, Notification.Data.class));
+            return new Notification(null, registrationIds, data);
         }
         catch (Exception e)
         {
@@ -26,11 +26,11 @@ public class NotificationFactory
         }
     }
 
-    public static Notification broadcastNotification(String channelId, String jsonData) throws HttpExceptions.ServerError
+    public static Notification broadcastNotification(String channelId, Notification.Data data) throws HttpExceptions.ServerError
     {
         try
         {
-            return new Notification(channelId, null, GsonProvider.get().fromJson(jsonData, Notification.Data.class));
+            return new Notification(channelId, null, data);
         }
         catch (Exception e)
         {
