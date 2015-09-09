@@ -26,6 +26,7 @@ public class RequestFactory
         catch (Exception e)
         {
             log.error("Unable to process request json [" + e.getMessage() + "]", e);
+            log.info("[REQUEST JSON] " + json);
             throw new HttpExceptions.ServerError();
         }
     }
